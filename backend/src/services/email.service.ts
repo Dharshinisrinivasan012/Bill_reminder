@@ -108,3 +108,52 @@ export const sendWeeklySummaryEmail = async (
   `;
   await sendEmail(email, 'Weekly Productivity Summary - PPMS', html);
 };
+
+export const sendMonthlySummaryEmail = async (
+  email: string,
+  stats: { tasksCompleted: number; habitsCompleted: number; studyMinutes: number }
+): Promise<void> => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Monthly Productivity Summary</h2>
+      <p>Here's your productivity summary for this month:</p>
+      <ul>
+        <li>Tasks Completed: ${stats.tasksCompleted}</li>
+        <li>Habits Completed: ${stats.habitsCompleted}</li>
+        <li>Study Time: ${Math.round(stats.studyMinutes / 60)} hours</li>
+      </ul>
+      <a href="${config.clientUrl}/analytics" style="display: inline-block; padding: 12px 24px; background: #6366f1; color: white; text-decoration: none; border-radius: 6px;">View Analytics</a>
+    </div>
+  `;
+  await sendEmail(email, 'Monthly Productivity Summary - PPMS', html);
+};
+
+export const sendTaskReminderEmail = async (
+  email: string,
+  taskTitle: string,
+  dueDate: string
+): Promise<void> => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Task Reminder</h2>
+      <p>Task "${taskTitle}" is due on ${dueDate}.</p>
+      <a href="${config.clientUrl}/tasks" style="display: inline-block; padding: 12px 24px; background: #6366f1; color: white; text-decoration: none; border-radius: 6px;">View Tasks</a>
+    </div>
+  `;
+  await sendEmail(email, `Task Reminder: ${taskTitle} - PPMS`, html);
+};
+
+export const sendExamReminderEmail = async (
+  email: string,
+  topic: string,
+  examDate: string
+): Promise<void> => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Exam Reminder</h2>
+      <p>Exam for "${topic}" is scheduled for ${examDate}.</p>
+      <a href="${config.clientUrl}/study" style="display: inline-block; padding: 12px 24px; background: #6366f1; color: white; text-decoration: none; border-radius: 6px;">View Study Plans</a>
+    </div>
+  `;
+  await sendEmail(email, `Exam Reminder: ${topic} - PPMS`, html);
+};

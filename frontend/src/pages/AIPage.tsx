@@ -10,6 +10,7 @@ type PrioritizedTask = {
   taskId: string;
   title: string;
   priority: string;
+  status: string;
   dueDate?: string;
   timeRemaining?: string;
   reason: string;
@@ -79,25 +80,27 @@ export function AIPage() {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.05 }}
-                        className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+                        className="p-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">{p.title}</p>
-                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-600 dark:text-slate-400">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{p.title}</p>
+                            <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-600 dark:text-slate-400">
+                              <span className="capitalize">{p.status.replace('_', ' ')}</span>
                               {p.dueDate && (
                                 <>
+                                  <span>•</span>
                                   <Clock className="w-3 h-3" />
                                   <span>{formatDate(p.dueDate)}</span>
                                 </>
                               )}
                               {p.timeRemaining && <span>({p.timeRemaining})</span>}
                             </div>
-                            <p className="text-xs text-slate-500 mt-1">{p.reason}</p>
-                            <p className="text-xs font-medium text-red-600 mt-1">Action: {p.action}</p>
                           </div>
-                          <Badge variant="danger">{p.priority.toUpperCase()}</Badge>
+                          <Badge variant="danger" className="shrink-0">{p.priority.toUpperCase()}</Badge>
                         </div>
+                        <p className="text-xs text-slate-500 mt-1">{p.reason}</p>
+                        <p className="text-xs font-medium text-red-600 mt-0.5">Action: {p.action}</p>
                       </motion.div>
                     ))}
                   </div>
@@ -113,25 +116,27 @@ export function AIPage() {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.05 }}
-                        className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
+                        className="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">{p.title}</p>
-                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-600 dark:text-slate-400">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{p.title}</p>
+                            <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-600 dark:text-slate-400">
+                              <span className="capitalize">{p.status.replace('_', ' ')}</span>
                               {p.dueDate && (
                                 <>
+                                  <span>•</span>
                                   <Clock className="w-3 h-3" />
                                   <span>{formatDate(p.dueDate)}</span>
                                 </>
                               )}
                               {p.timeRemaining && <span>({p.timeRemaining})</span>}
                             </div>
-                            <p className="text-xs text-slate-500 mt-1">{p.reason}</p>
-                            <p className="text-xs font-medium text-amber-600 mt-1">Action: {p.action}</p>
                           </div>
-                          <Badge variant="warning">{p.priority.toUpperCase()}</Badge>
+                          <Badge variant="warning" className="shrink-0">{p.priority.toUpperCase()}</Badge>
                         </div>
+                        <p className="text-xs text-slate-500 mt-1">{p.reason}</p>
+                        <p className="text-xs font-medium text-amber-600 mt-0.5">Action: {p.action}</p>
                       </motion.div>
                     ))}
                   </div>
@@ -147,25 +152,27 @@ export function AIPage() {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.05 }}
-                        className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
+                        className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">{p.title}</p>
-                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-600 dark:text-slate-400">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{p.title}</p>
+                            <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-600 dark:text-slate-400">
+                              <span className="capitalize">{p.status.replace('_', ' ')}</span>
                               {p.dueDate && (
                                 <>
+                                  <span>•</span>
                                   <Clock className="w-3 h-3" />
                                   <span>{formatDate(p.dueDate)}</span>
                                 </>
                               )}
                               {p.timeRemaining && <span>({p.timeRemaining})</span>}
                             </div>
-                            <p className="text-xs text-slate-500 mt-1">{p.reason}</p>
-                            <p className="text-xs font-medium text-blue-600 mt-1">Action: {p.action}</p>
                           </div>
-                          <Badge variant="info">{p.priority.toUpperCase()}</Badge>
+                          <Badge variant="info" className="shrink-0">{p.priority.toUpperCase()}</Badge>
                         </div>
+                        <p className="text-xs text-slate-500 mt-1">{p.reason}</p>
+                        <p className="text-xs font-medium text-blue-600 mt-0.5">Action: {p.action}</p>
                       </motion.div>
                     ))}
                   </div>
@@ -181,15 +188,25 @@ export function AIPage() {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.05 }}
-                        className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+                        className="p-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1">
-                            <p className="text-sm font-medium line-through text-slate-400">{p.title}</p>
-                            <p className="text-xs text-slate-500 mt-1">{p.reason}</p>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium line-through text-slate-400 truncate">{p.title}</p>
+                            <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-600 dark:text-slate-400">
+                              <span className="capitalize">{p.status.replace('_', ' ')}</span>
+                              {p.dueDate && (
+                                <>
+                                  <span>•</span>
+                                  <Clock className="w-3 h-3" />
+                                  <span>{formatDate(p.dueDate)}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
-                          <Badge variant="success">DONE</Badge>
+                          <Badge variant="success" className="shrink-0">DONE</Badge>
                         </div>
+                        <p className="text-xs text-slate-500 mt-1">{p.reason}</p>
                       </motion.div>
                     ))}
                   </div>

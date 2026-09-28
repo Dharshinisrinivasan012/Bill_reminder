@@ -117,9 +117,20 @@ export interface IStudySession extends Document {
 
 export type NotificationType =
   | 'task_reminder'
+  | 'task_created'
+  | 'task_updated'
+  | 'task_completed'
+  | 'task_overdue'
   | 'deadline_alert'
   | 'habit_reminder'
+  | 'habit_completed'
+  | 'habit_streak'
   | 'study_reminder'
+  | 'study_completed'
+  | 'study_session'
+  | 'exam_reminder'
+  | 'weekly_report'
+  | 'monthly_report'
   | 'system'
   | 'achievement';
 

@@ -11,6 +11,7 @@ export const prioritizeTasks = async (
   taskId: string;
   title: string;
   priority: string;
+  status: string;
   dueDate?: string;
   timeRemaining?: string;
   reason: string;
@@ -91,9 +92,10 @@ export const prioritizeTasks = async (
         taskId: task._id.toString(),
         title: task.title,
         priority,
+        status: task.status,
         dueDate: task.dueDate?.toISOString(),
         timeRemaining,
-        reason: `${reason} (AI unavailable - using rule-based fallback)`,
+        reason,
         action,
         section,
       };
@@ -142,6 +144,7 @@ export const prioritizeTasks = async (
       taskId: t.taskId,
       title: t.title || tasks.find(task => task._id.toString() === t.taskId)?.title || 'Unknown',
       priority: t.priority || 'medium',
+      status: t.status || tasks.find(task => task._id.toString() === t.taskId)?.status || 'todo',
       dueDate: t.dueDate,
       timeRemaining: t.timeRemaining,
       reason: t.reason || 'AI prioritized',
@@ -161,6 +164,7 @@ export const prioritizeTasks = async (
         taskId: task._id.toString(),
         title: task.title,
         priority: task.priority,
+        status: task.status,
         dueDate: task.dueDate?.toISOString(),
         timeRemaining,
         reason: 'Could not parse AI response - using original priority',

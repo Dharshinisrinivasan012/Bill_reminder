@@ -16,16 +16,16 @@ export function usePomodoro() {
   }, [store.isRunning, store.tick]);
 
   const saveSession = useCallback(async () => {
-    const workMinutes = usePomodoroStore.getState().timeLeft;
-    const { subjectId, studyPlanId, isBreak } = usePomodoroStore.getState();
+    const { subjectId, studyPlanId, isBreak, initialWorkMinutes } = usePomodoroStore.getState();
 
     if (!isBreak) {
+      const duration = initialWorkMinutes || 25; // Use initial work minutes, not timeLeft
       await studyApi.createSession({
         subjectId,
         studyPlanId,
         type: 'pomodoro',
-        duration: workMinutes,
-        startedAt: new Date(Date.now() - workMinutes * 60000).toISOString(),
+        duration,
+        startedAt: new Date(Date.now() - duration * 60000).toISOString(),
         endedAt: new Date().toISOString(),
       });
     }

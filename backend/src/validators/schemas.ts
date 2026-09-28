@@ -73,9 +73,24 @@ export const createTaskSchema = z.object({
   }),
 });
 
-export const updateTaskSchema = createTaskSchema.extend({
+export const updateTaskSchema = z.object({
   params: z.object({
     id: z.string().min(1),
+  }),
+  body: z.object({
+    title: z.string().min(1).max(200).optional(),
+    description: z.string().max(2000).optional(),
+    status: z.enum(['todo', 'in_progress', 'review', 'done']).optional(),
+    priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+    tags: z.array(z.string()).optional(),
+    category: z.string().max(100).optional(),
+    dueDate: z.string().datetime().optional().or(z.string().optional()),
+    reminder: z.string().datetime().optional().or(z.string().optional()),
+    recurrence: z.enum(['none', 'daily', 'weekly', 'monthly', 'yearly']).optional(),
+    recurrenceEndDate: z.string().datetime().optional().or(z.string().optional()),
+    kanbanOrder: z.number().optional(),
+    scheduledStart: z.string().datetime().optional().or(z.string().optional()),
+    scheduledEnd: z.string().datetime().optional().or(z.string().optional()),
   }),
 });
 

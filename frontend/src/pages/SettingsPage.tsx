@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { User, Lock, Bell, Palette, Timer } from 'lucide-react';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/store';
@@ -11,6 +11,7 @@ export function SettingsPage() {
   const { user, setUser } = useAuthStore();
   const { theme, setTheme } = useTheme();
   const [message, setMessage] = useState('');
+  const queryClient = useQueryClient();
 
   const profileMutation = useMutation({
     mutationFn: (data: { name: string }) => authApi.updateProfile(data),
@@ -32,6 +33,15 @@ export function SettingsPage() {
     mutationFn: (data: { currentPassword: string; newPassword: string }) =>
       authApi.changePassword(data.currentPassword, data.newPassword),
     onSuccess: () => setMessage('Password changed successfully'),
+  });
+
+  const resendVerificationMutation = useMutation({
+    mutationFn: () => authApi.resendVerificationEmail(),
+    onSuccess: async () => {
+      setMessage('Verification email sent successfully');
+      const res = await authApi.getProfile();
+      setUser(res.data.data!);
+    },
   });
 
   const { register: registerProfile, handleSubmit: handleProfileSubmit } = useForm({
@@ -65,6 +75,16 @@ export function SettingsPage() {
             <span className={`text-xs px-2 py-1 rounded-full ${user?.isEmailVerified ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
               {user?.isEmailVerified ? 'Email Verified' : 'Email Not Verified'}
             </span>
+            {!user?.isEmailVerified && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => resendVerificationMutation.mutate()}
+                loading={resendVerificationMutation.isPending}
+              >
+                Resend Verification
+              </Button>
+            )}
           </div>
           <Button type="submit" loading={profileMutation.isPending}>Save Profile</Button>
         </form>

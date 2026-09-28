@@ -254,6 +254,24 @@ export const uploadAvatar = asyncHandler(async (req: AuthRequest, res: Response)
   sendSuccess(res, { avatar: user.avatar });
 });
 
+export const resendVerificationEmail = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const user = await User.findById(req.userId);
+  if (!user) throw new AppError('User not found', 404);
+
+  if (user.isEmailVerified) {
+    throw new AppError('Email is already verified', 400);
+  }
+
+  const verificationToken = crypto.randomBytes(32).toString('hex');
+  user.emailVerificationToken = verificationToken;
+  user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  await user.save();
+
+  await sendVerificationEmail(user.email, verificationToken);
+
+  sendSuccess(res, undefined, 'Verification email sent successfully');
+});
+
 export const changePassword = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { currentPassword, newPassword } = req.body;
   const user = await User.findById(req.userId).select('+password');

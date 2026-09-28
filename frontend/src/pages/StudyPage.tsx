@@ -6,6 +6,7 @@ import { Plus, Play, Pause, RotateCcw, BookOpen, Clock, Trash2 } from 'lucide-re
 import { studyApi } from '@/api/study';
 import { usePomodoro } from '@/hooks/usePomodoro';
 import { useAuthStore } from '@/store';
+import { useSocket } from '@/hooks/useSocket';
 import { Button, Input, Textarea, Select, Modal, Card, ProgressBar, EmptyState, Spinner, Badge } from '@/components/ui';
 import { formatDate, formatTime } from '@/utils';
 import type { Subject, StudyPlan } from '@/types';
@@ -15,6 +16,28 @@ export function StudyPage() {
   const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
   const queryClient = useQueryClient();
+  const socket = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNotification = (notification: any) => {
+      const relevantTypes = ['study_session', 'exam_reminder'];
+      if (relevantTypes.includes(notification.type)) {
+        queryClient.invalidateQueries({ queryKey: ['study-plans'] });
+        queryClient.invalidateQueries({ queryKey: ['study-progress'] });
+        queryClient.invalidateQueries({ queryKey: ['exams'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+        queryClient.invalidateQueries({ queryKey: ['calendar'] });
+      }
+    };
+
+    socket.on('notification', handleNotification);
+
+    return () => {
+      socket.off('notification', handleNotification);
+    };
+  }, [socket, queryClient]);
 
   const { data: subjectsData } = useQuery({
     queryKey: ['subjects'],
@@ -40,6 +63,7 @@ export function StudyPage() {
     mutationFn: studyApi.createSubject,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subjects'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       setShowSubjectModal(false);
     },
   });
@@ -48,18 +72,40 @@ export function StudyPage() {
     mutationFn: studyApi.createPlan,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['study-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar'] });
       setShowPlanModal(false);
     },
   });
 
   const updatePlanMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<StudyPlan> }) => studyApi.updatePlan(id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['study-plans'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['study-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar'] });
+    },
   });
 
   const deletePlanMutation = useMutation({
     mutationFn: studyApi.deletePlan,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['study-plans'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['study-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar'] });
+    },
+  });
+
+  const completeSessionMutation = useMutation({
+    mutationFn: (data: any) => studyApi.createSession(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['study-progress'] });
+      queryClient.invalidateQueries({ queryKey: ['study-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-study'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-productivity'] });
+      queryClient.invalidateQueries({ queryKey: ['study-plans'] });
+    },
   });
 
   const subjects = subjectsData?.data?.data || [];
@@ -236,6 +282,19 @@ function PomodoroTimer({ subjects }: { subjects: Subject[] }) {
   const pomodoro = usePomodoro();
   const workMinutes = user?.preferences?.pomodoro?.workMinutes || 25;
   const breakMinutes = user?.preferences?.pomodoro?.breakMinutes || 5;
+  const queryClient = useQueryClient();
+
+  const completeSessionMutation = useMutation({
+    mutationFn: (data: any) => studyApi.createSession(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['study-progress'] });
+      queryClient.invalidateQueries({ queryKey: ['study-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-study'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-productivity'] });
+      queryClient.invalidateQueries({ queryKey: ['study-plans'] });
+    },
+  });
 
   const minutes = Math.floor(pomodoro.timeLeft / 60);
   const seconds = pomodoro.timeLeft % 60;
@@ -246,11 +305,18 @@ function PomodoroTimer({ subjects }: { subjects: Subject[] }) {
         pomodoro.reset(workMinutes);
       } else {
         pomodoro.completeSession();
-        pomodoro.saveSession();
+        completeSessionMutation.mutate({
+          subjectId: pomodoro.subjectId,
+          studyPlanId: pomodoro.studyPlanId,
+          type: 'pomodoro',
+          duration: pomodoro.initialWorkMinutes,
+          startedAt: new Date(Date.now() - pomodoro.initialWorkMinutes * 60000).toISOString(),
+          endedAt: new Date().toISOString(),
+        });
         pomodoro.startBreak(breakMinutes);
       }
     }
-  }, [pomodoro.timeLeft, pomodoro.isRunning]);
+  }, [pomodoro.timeLeft, pomodoro.isRunning, pomodoro, workMinutes, breakMinutes, completeSessionMutation]);
 
   const progress = pomodoro.isBreak
     ? ((breakMinutes * 60 - pomodoro.timeLeft) / (breakMinutes * 60)) * 100

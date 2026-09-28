@@ -51,8 +51,7 @@ export const getTasks = asyncHandler(async (req: AuthRequest, res: Response) => 
     Task.countDocuments(filter),
   ]);
 
-  res.json({
-    success: true,
+  sendSuccess(res, {
     data: tasks,
     pagination: {
       page: pageNum,
@@ -119,6 +118,20 @@ export const updateTask = asyncHandler(async (req: AuthRequest, res: Response) =
   Object.assign(task, updates);
   await task.save();
   await updateDailyAnalytics(req.userId!);
+
+  // Send task updated notification (only if not just completing)
+  if (!(isNowDone && wasNotDone)) {
+    await createAndEmitNotification(
+      req.userId!,
+      'task_updated',
+      'Task Updated',
+      `Task "${task.title}" has been updated`,
+      `/tasks/${task._id}`,
+      { taskId: task._id },
+      false,
+      undefined
+    );
+  }
 
   // Create notification when task is completed
   if (isNowDone && wasNotDone) {

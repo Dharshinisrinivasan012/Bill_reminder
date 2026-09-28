@@ -107,6 +107,7 @@ interface PomodoroState {
   isRunning: boolean;
   isBreak: boolean;
   timeLeft: number;
+  initialWorkMinutes: number;
   sessionsCompleted: number;
   subjectId?: string;
   studyPlanId?: string;
@@ -123,19 +124,21 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
   isRunning: false,
   isBreak: false,
   timeLeft: 25 * 60,
+  initialWorkMinutes: 25,
   sessionsCompleted: 0,
   start: (workMinutes, subjectId, studyPlanId) =>
     set({
       isRunning: true,
       isBreak: false,
       timeLeft: workMinutes * 60,
+      initialWorkMinutes: workMinutes,
       subjectId,
       studyPlanId,
     }),
   pause: () => set({ isRunning: false }),
   resume: () => set({ isRunning: true }),
   reset: (workMinutes) =>
-    set({ isRunning: false, isBreak: false, timeLeft: workMinutes * 60 }),
+    set({ isRunning: false, isBreak: false, timeLeft: workMinutes * 60, initialWorkMinutes: workMinutes }),
   tick: () => {
     const { timeLeft, isRunning } = get();
     if (isRunning && timeLeft > 0) {

@@ -37,5 +37,6 @@ router.get('/profile', authenticate, authController.getProfile);
 router.put('/profile', authenticate, validate(updateProfileSchema), authController.updateProfile);
 router.post('/avatar', authenticate, upload.single('avatar'), authController.uploadAvatar);
 router.put('/change-password', authenticate, authController.changePassword);
+router.post('/resend-verification', authenticate, authController.resendVerificationEmail);
 
 export default router;

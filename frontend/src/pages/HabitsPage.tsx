@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
@@ -14,11 +14,32 @@ import {
 } from 'recharts';
 import { habitsApi } from '@/api/habits';
 import { Button, Input, Textarea, Modal, ProgressBar, EmptyState, Spinner } from '@/components/ui';
+import { useSocket } from '@/hooks/useSocket';
 import type { Habit } from '@/types';
 
 export function HabitsPage() {
   const [showModal, setShowModal] = useState(false);
   const queryClient = useQueryClient();
+  const socket = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNotification = (notification: any) => {
+      const relevantTypes = ['habit_completed', 'habit_streak'];
+      if (relevantTypes.includes(notification.type)) {
+        queryClient.invalidateQueries({ queryKey: ['habits'] });
+        queryClient.invalidateQueries({ queryKey: ['habit-analytics'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      }
+    };
+
+    socket.on('notification', handleNotification);
+
+    return () => {
+      socket.off('notification', handleNotification);
+    };
+  }, [socket, queryClient]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['habits'],
@@ -39,6 +60,8 @@ export function HabitsPage() {
     mutationFn: habitsApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['habits'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['habit-analytics'] });
       setShowModal(false);
     },
   });
@@ -48,12 +71,18 @@ export function HabitsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['habits'] });
       queryClient.invalidateQueries({ queryKey: ['habit-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-habits'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-productivity'] });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: habitsApi.delete,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['habits'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['habits'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
   });
 
   const habits = data?.data?.data || [];

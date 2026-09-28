@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addDays, subDays } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { calendarApi } from '@/api';
 import { Button, Card, Spinner } from '@/components/ui';
 import { cn } from '@/utils';
+import { useSocket } from '@/hooks/useSocket';
 import type { CalendarEvent } from '@/types';
 
 type ViewType = 'day' | 'week' | 'month';
@@ -13,6 +14,24 @@ export function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<ViewType>('month');
   const queryClient = useQueryClient();
+  const socket = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNotification = (notification: any) => {
+      const relevantTypes = ['task_created', 'task_updated', 'task_completed', 'study_session', 'exam_reminder'];
+      if (relevantTypes.includes(notification.type)) {
+        queryClient.invalidateQueries({ queryKey: ['calendar'] });
+      }
+    };
+
+    socket.on('notification', handleNotification);
+
+    return () => {
+      socket.off('notification', handleNotification);
+    };
+  }, [socket, queryClient]);
 
   const getDateRange = () => {
     if (view === 'day') {

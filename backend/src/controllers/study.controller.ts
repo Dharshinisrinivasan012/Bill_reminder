@@ -107,6 +107,25 @@ export const createStudySession = asyncHandler(async (req: AuthRequest, res: Res
 
   await updateDailyAnalytics(req.userId!);
 
+  // Update study plan progress if session is linked to a plan
+  if (session.studyPlanId) {
+    const plan = await StudyPlan.findOne({ _id: session.studyPlanId, userId: req.userId });
+    if (plan && plan.status !== 'completed') {
+      // Increment progress based on session duration (25 min = 10% progress)
+      const progressIncrement = Math.min(10, Math.round(session.duration / 2.5));
+      plan.progress = Math.min(100, plan.progress + progressIncrement);
+      
+      // Auto-update status based on progress
+      if (plan.progress >= 100) {
+        plan.status = 'completed';
+      } else if (plan.progress > 0 && plan.status === 'not_started') {
+        plan.status = 'in_progress';
+      }
+      
+      await plan.save();
+    }
+  }
+
   // Send study session notification
   await createAndEmitNotification(
     req.userId!,

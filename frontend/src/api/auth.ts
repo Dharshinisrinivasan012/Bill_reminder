@@ -35,4 +35,7 @@ export const authApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+
+  resendVerificationEmail: () =>
+    api.post('/auth/resend-verification'),
 };

@@ -1,14 +1,39 @@
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import { analyticsApi } from '@/api';
 import { Card, Spinner } from '@/components/ui';
+import { useSocket } from '@/hooks/useSocket';
+import { useQueryClient } from '@tanstack/react-query';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export function AnalyticsPage() {
+  const queryClient = useQueryClient();
+  const socket = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNotification = (notification: any) => {
+      const relevantTypes = ['task_completed', 'habit_completed', 'study_session', 'weekly_report'];
+      if (relevantTypes.includes(notification.type)) {
+        queryClient.invalidateQueries({ queryKey: ['analytics-productivity'] });
+        queryClient.invalidateQueries({ queryKey: ['analytics-tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['analytics-habits'] });
+        queryClient.invalidateQueries({ queryKey: ['analytics-study'] });
+      }
+    };
+
+    socket.on('notification', handleNotification);
+
+    return () => {
+      socket.off('notification', handleNotification);
+    };
+  }, [socket, queryClient]);
   const { data: productivity, isLoading: pLoading } = useQuery({
     queryKey: ['analytics-productivity'],
     queryFn: () => analyticsApi.getProductivity(30),

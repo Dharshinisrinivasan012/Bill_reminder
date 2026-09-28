@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
@@ -6,6 +6,7 @@ import { Plus, Search, Filter, LayoutGrid, List, Trash2, Edit2 } from 'lucide-re
 import { tasksApi } from '@/api/tasks';
 import { Button, Input, Select, Textarea, Modal, Badge, EmptyState, Spinner } from '@/components/ui';
 import { formatDate, priorityColors, cn } from '@/utils';
+import { useSocket } from '@/hooks/useSocket';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 
 type ViewMode = 'list' | 'kanban';
@@ -19,6 +20,27 @@ export function TasksPage() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [previousStatuses, setPreviousStatuses] = useState<Record<string, TaskStatus>>({});
   const queryClient = useQueryClient();
+  const socket = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNotification = (notification: any) => {
+      const relevantTypes = ['task_created', 'task_completed', 'task_updated'];
+      if (relevantTypes.includes(notification.type)) {
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['kanban'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+        queryClient.invalidateQueries({ queryKey: ['calendar'] });
+      }
+    };
+
+    socket.on('notification', handleNotification);
+
+    return () => {
+      socket.off('notification', handleNotification);
+    };
+  }, [socket, queryClient]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['tasks', search, statusFilter, priorityFilter],
@@ -46,7 +68,26 @@ export function TasksPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<Task> }) => tasksApi.update(id, data),
-    onSuccess: () => {
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['tasks'] });
+      const previousTasks = queryClient.getQueryData(['tasks', search, statusFilter, priorityFilter]);
+      queryClient.setQueryData(['tasks', search, statusFilter, priorityFilter], (old: any) => {
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            data: old.data.data.map((task: Task) =>
+              task._id === id ? { ...task, ...data } : task
+            ),
+          },
+        };
+      });
+      return { previousTasks };
+    },
+    onError: (err, variables, context) => {
+      queryClient.setQueryData(['tasks', search, statusFilter, priorityFilter], context?.previousTasks);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['kanban'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
@@ -198,14 +239,26 @@ export function TasksPage() {
                     onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent, task._id)}
                     className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg cursor-grab active:cursor-grabbing"
                   >
-                    <p className="text-sm font-medium">{task.title}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className={cn('text-xs px-2 py-0.5 rounded-full', priorityColors[task.priority])}>
-                        {task.priority}
-                      </span>
-                      {task.dueDate && (
-                        <span className="text-xs text-slate-400">{formatDate(task.dueDate)}</span>
-                      )}
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="checkbox"
+                        checked={task.status === 'done'}
+                        onChange={() => handleTaskComplete(task)}
+                        className="w-4 h-4 rounded border-slate-300 text-primary-600 mt-0.5 flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className={cn('text-sm font-medium truncate', task.status === 'done' && 'line-through text-slate-400')}>
+                          {task.title}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
+                          <span className={cn('text-xs px-2 py-0.5 rounded-full', priorityColors[task.priority])}>
+                            {task.priority}
+                          </span>
+                          {task.dueDate && (
+                            <span className="text-xs text-slate-400">{formatDate(task.dueDate)}</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </motion.div>
                 ))}
